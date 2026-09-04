@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Token FCM - GChat</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: 0 auto;
+      background-color: #f9f9f9;
+    }
+    .card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    button {
+      width: 100%;
+      background-color: #0f9d58;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      box-sizing: border-box;
+      resize: none;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>📱 FCM Token Generator</h2>
+    <p style="font-size: 13px; color: #666;">Projeto: <strong>gchat-2093a</strong></p>
+    
+    <button id="btn-token">1. Gerar e Copiar Token FCM</button>
+    
+    <label for="token-box"><strong>Seu Device Token:</strong></label>
+    <textarea id="token-box" readonly placeholder="Clique no botão acima para gerar..."></textarea>
+    
+    <div id="status" class="status"></div>
+  </div>
+
+  <!-- Firebase App & Messaging SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
+
+  <script>
+    // 1. As credenciais do seu projeto gchat-2093a:
+    // (Caso falte a apiKey, messagingSenderId ou appId, pegue no Firebase Console > Configurações do Projeto > Geral)
+    const firebaseConfig = {
+      projectId: "gchat-2093a",
+      authDomain: "gchat-2093a.firebaseapp.com",
+      storageBucket: "gchat-2093a.appspot.com",
+      // Cole aqui a apiKey e messagingSenderId exibidos no seu Firebase Console se necessário:
+      apiKey: "AIzaSyBuZLQHMgCDRYuIjXyQ50yxtY86CKO9qic", 
+      messagingSenderId: "128934138526", 
+      appId: "1:128934138526:web:8f74ba5f94961114cca18f"
+    };
+
+
+    firebase.initializeApp(firebaseConfig);
+    const messaging = firebase.messaging();
+
+    const btn = document.getElementById("btn-token");
+    const tokenBox = document.getElementById("token-box");
+    const statusDiv = document.getElementById("status");
+
+    btn.addEventListener("click", async () => {
+      statusDiv.style.color = "#555";
+      statusDiv.innerText = "Solicitando permissão do navegador...";
+
+      try {
+        const permission = await Notification.requestPermission();
+        
+        if (permission === 'granted') {
+          statusDiv.innerText = "Gerando token...";
+
+          // 2. Cole a chave VAPID gerada na aba Firebase Console > Configurações > Cloud Messaging > Certificados da Web
+          const currentToken = await messaging.getToken({ 
+            vapidKey: 'SUA_CHAVE_VAPID_AQUI' 
+          });
+
+          if (currentToken) {
+            tokenBox.value = currentToken;
+            
+            // Copia automaticamente para a área de transferência do celular
+            navigator.clipboard.writeText(currentToken);
+            
+            statusDiv.style.color = "#0f9d58";
+            statusDiv.innerHTML = "<strong>✅ Token gerado e copiado!</strong> Cole na variável DEVICE_REGISTRATION_TOKEN da extensão.";
+          } else {
+            statusDiv.style.color = "#d93025";
+            statusDiv.innerText = "⚠️ Nenhum token retornado. Verifique a chave VAPID.";
+          }
+        } else {
+          statusDiv.style.color = "#d93025";
+          statusDiv.innerText = "❌ Permissão de notificação foi negada no celular.";
+        }
+      } catch (err) {
+        console.error(err);
+        statusDiv.style.color = "#d93025";
+        statusDiv.innerText = "❌ Erro ao gerar token: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
