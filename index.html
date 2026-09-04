@@ -88,42 +88,44 @@
     const statusDiv = document.getElementById("status");
 
     btn.addEventListener("click", async () => {
-      statusDiv.style.color = "#555";
-      statusDiv.innerText = "Solicitando permissão do navegador...";
+  statusDiv.style.color = "#555";
+  statusDiv.innerText = "Solicitando permissão do navegador...";
 
-      try {
-        const permission = await Notification.requestPermission();
+  try {
+    const permission = await Notification.requestPermission();
+    
+    if (permission === 'granted') {
+      statusDiv.innerText = "Registrando Service Worker e gerando token...";
+
+      // 1. Registra o Service Worker apontando explicitamente para o caminho do seu repositório no GitHub Pages
+      const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+
+      // 2. Passa o registro correto para o Firebase
+      const currentToken = await messaging.getToken({ 
+        vapidKey: 'SUA_CHAVE_VAPID_AQUI',
+        serviceWorkerRegistration: registration
+      });
+
+      if (currentToken) {
+        tokenBox.value = currentToken;
+        navigator.clipboard.writeText(currentToken);
         
-        if (permission === 'granted') {
-          statusDiv.innerText = "Gerando token...";
-
-          // 2. Cole a chave VAPID gerada na aba Firebase Console > Configurações > Cloud Messaging > Certificados da Web
-          const currentToken = await messaging.getToken({ 
-            vapidKey: 'SUA_CHAVE_VAPID_AQUI' 
-          });
-
-          if (currentToken) {
-            tokenBox.value = currentToken;
-            
-            // Copia automaticamente para a área de transferência do celular
-            navigator.clipboard.writeText(currentToken);
-            
-            statusDiv.style.color = "#0f9d58";
-            statusDiv.innerHTML = "<strong>✅ Token gerado e copiado!</strong> Cole na variável DEVICE_REGISTRATION_TOKEN da extensão.";
-          } else {
-            statusDiv.style.color = "#d93025";
-            statusDiv.innerText = "⚠️ Nenhum token retornado. Verifique a chave VAPID.";
-          }
-        } else {
-          statusDiv.style.color = "#d93025";
-          statusDiv.innerText = "❌ Permissão de notificação foi negada no celular.";
-        }
-      } catch (err) {
-        console.error(err);
+        statusDiv.style.color = "#0f9d58";
+        statusDiv.innerHTML = "<strong>✅ Token gerado e copiado!</strong> Cole na variável DEVICE_REGISTRATION_TOKEN da extensão.";
+      } else {
         statusDiv.style.color = "#d93025";
-        statusDiv.innerText = "❌ Erro ao gerar token: " + err.message;
+        statusDiv.innerText = "⚠️ Nenhum token retornado. Verifique a chave VAPID.";
       }
-    });
+    } else {
+      statusDiv.style.color = "#d93025";
+      statusDiv.innerText = "❌ Permissão de notificação foi negada no celular.";
+    }
+  } catch (err) {
+    console.error(err);
+    statusDiv.style.color = "#d93025";
+    statusDiv.innerText = "❌ Erro ao gerar token: " + err.message;
+  }
+});
   </script>
 </body>
 </html>
